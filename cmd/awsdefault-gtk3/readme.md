@@ -62,6 +62,13 @@ $ go get github.com/go-ini/ini
 $ go get github.com/gotk3/gotk3/gtk
 ```
 
+- _optional_ [godebug](https://github.com/kylelemons/godebug/pretty); for testing via `go test ./...`
+
+```bash
+$ go get github.com/kylelemons/godebug/pretty
+```
+
+
 ### Install the Go binary
 
 #### Linux 

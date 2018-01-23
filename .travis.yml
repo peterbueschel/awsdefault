@@ -10,6 +10,7 @@ script:
   - go get -v -tags gtk_3_10 github.com/gotk3/gotk3/gtk
   - go get -v github.com/go-ini/ini
   - go get -v github.com/urfave/cli
+  - go get -v github.com/kylelemons/godebug/pretty
   - diff -u <(echo -n) <(gofmt -d -s .)
   - go tool vet .
   - go test -v -cover ./...
