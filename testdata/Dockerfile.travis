@@ -1,0 +1,17 @@
+FROM travisci/ci-garnet:packer-1515445195-7dfb2e1
+USER travis
+RUN bash -lc "rvm install 2.4.1"
+RUN bash -lc "rvm use 2.4.1 --default"
+WORKDIR /home/travis/builds
+RUN git clone https://github.com/travis-ci/travis-build.git
+WORKDIR travis-build
+RUN mkdir -p /home/travis/.travis
+RUN ln -s $(pwd) /home/travis/.travis/travis-build
+RUN bash -lc "bundle install"
+RUN bash -lc "bundler add travis"
+WORKDIR /home/travis/builds/travis-build
+
+RUN bash -lc "bundler binstubs travis"
+
+COPY --chown=travis:travis . awsdefault/
+WORKDIR awsdefault

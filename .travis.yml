@@ -1,0 +1,16 @@
+sudo: false
+language: go
+go:
+  - 1.9.2
+before_install:
+  - go get github.com/mattn/goveralls
+script:
+  - apt-get -y install libgtk-3-dev
+  - go get -v -tags gtk_3_10 github.com/gotk3/gotk3/gtk
+  - go get -v github.com/go-ini/ini
+  - diff -u <(echo -n) <(gofmt -d -s .)
+  - go tool vet .
+  - go test -v -race ./...
+  - $HOME/gopath/bin/goveralls -v -service=travis-ci
+after_success:
+  - test -n "$TRAVIS_TAG" && curl -sL https://git.io/goreleaser | bash
