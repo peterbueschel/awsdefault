@@ -1,6 +1,9 @@
 awsdefault-gtk3 UI
 ==================
 
+[![Coverage Status](https://coveralls.io/repos/github/peterbueschel/awsdefault/badge.svg?branch=master)](https://coveralls.io/github/peterbueschel/awsdefault?branch=master)
+
+
 # Usage
 
 ```bash

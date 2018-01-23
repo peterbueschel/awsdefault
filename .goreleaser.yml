@@ -1,0 +1,17 @@
+builds:
+  - main: ./cmd/awsdefault/main.go.go
+binary: awsdefault
+ldflags: -s -w -X main.build={{.Version}}
+goos:
+  - windows
+  - darwin
+  - linux
+goarch:
+  - amd64
+# Archive customization
+archive:
+  format: tar.gz
+
+format_overrides:
+  - goos: windows
+    format: zip
