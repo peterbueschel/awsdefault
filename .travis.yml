@@ -13,7 +13,7 @@ script:
   - go get -v github.com/kylelemons/godebug/pretty
   - diff -u <(echo -n) <(gofmt -d -s .)
   - go tool vet .
-  - go test -v -cover ./...
+  - go test -tags gtk_3_10 -cover ./...
   - $HOME/gopath/bin/goveralls -v -service=travis-ci
 after_success:
   - test -n "$TRAVIS_TAG" && curl -sL https://git.io/goreleaser | bash

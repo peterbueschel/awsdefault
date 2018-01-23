@@ -75,15 +75,15 @@ func showError(msg string) error {
 	c := new(chooser)
 	c.setupWindow()
 	if c.err != nil {
-		return fmt.Errorf("Unable to create window:", c.err)
+		return fmt.Errorf("Unable to create window: %s", c.err)
 	}
 	btn, err := gtk.ButtonNewWithLabel(msg)
 	if err != nil {
-		return fmt.Errorf("Unable to create button:", err)
+		return fmt.Errorf("Unable to create button: %s", err)
 	}
 	_, err = btn.Connect("clicked", func() { c.window.Destroy() })
 	if err != nil {
-		return fmt.Errorf("Unable to connect button:", err)
+		return fmt.Errorf("Unable to connect button: %s", err)
 	}
 	c.window.Add(btn)
 	c.window.ShowAll()

@@ -12,6 +12,3 @@ RUN bash -lc "bundler add travis"
 WORKDIR /home/travis/builds/travis-build
 
 RUN bash -lc "bundler binstubs travis"
-
-COPY --chown=travis:travis . awsdefault/
-WORKDIR awsdefault
