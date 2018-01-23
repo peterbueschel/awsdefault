@@ -4,6 +4,8 @@ go:
 before_install:
   - sudo apt-get -y install libgtk-3-dev
   - go get github.com/mattn/goveralls
+install:
+  - # do nothing here 
 script:
   - go get -v -tags gtk_3_10 github.com/gotk3/gotk3/gtk
   - go get -v github.com/go-ini/ini
