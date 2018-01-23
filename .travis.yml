@@ -9,9 +9,10 @@ install:
 script:
   - go get -v -tags gtk_3_10 github.com/gotk3/gotk3/gtk
   - go get -v github.com/go-ini/ini
+  - go get -v github.com/urfave/cli
   - diff -u <(echo -n) <(gofmt -d -s .)
   - go tool vet .
-  - go test -v -race ./...
+  - go test -v -cover ./...
   - $HOME/gopath/bin/goveralls -v -service=travis-ci
 after_success:
   - test -n "$TRAVIS_TAG" && curl -sL https://git.io/goreleaser | bash
