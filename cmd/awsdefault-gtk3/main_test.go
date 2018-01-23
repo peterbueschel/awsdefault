@@ -227,6 +227,9 @@ func Test_initializeChooser(t *testing.T) {
 }
 
 func Test_showError(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping gtk3-error test.")
+	}
 	type args struct {
 		msg string
 	}
