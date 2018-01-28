@@ -46,10 +46,7 @@ func unsetDefaultProfile(file *awsdefault.CredentialsFile) *cli.Command {
 		Aliases: []string{"rm", "stop", "not"},
 		Usage:   "unset the AWS default profile.",
 		Action: func(c *cli.Context) error {
-			if err := file.UnSetDefault(); err != nil {
-				return err
-			}
-			return nil
+			return file.UnSetDefault()
 		},
 	}
 }
@@ -65,9 +62,58 @@ func setDefaultProfile(file *awsdefault.CredentialsFile) *cli.Command {
 					"the name of the profile used to become the new default is required",
 				)
 			}
-			if err := file.SetDefaultTo(c.Args().First()); err != nil {
+			return file.SetDefaultTo(c.Args().First())
+		},
+	}
+}
+
+func getUsedID(file *awsdefault.CredentialsFile) *cli.Command {
+	return &cli.Command{
+		Name:    "id",
+		Aliases: []string{"aws_access_key_id"},
+		Usage:   "Returns the AWS_ACCESS_KEY_ID of the currently used profile",
+		Action: func(c *cli.Context) error {
+			id, err := file.GetUsedID()
+			if err != nil {
 				return err
 			}
+			fmt.Println(id)
+			return nil
+		},
+	}
+}
+
+func getUsedKey(file *awsdefault.CredentialsFile) *cli.Command {
+	return &cli.Command{
+		Name:    "key",
+		Aliases: []string{"aws_secret_access_key"},
+		Usage:   "Returns the AWS_SECRET_ACCESS_KEY of the currently used profile",
+		Action: func(c *cli.Context) error {
+			k, err := file.GetUsedKey()
+			if err != nil {
+				return err
+			}
+			fmt.Println(k)
+			return nil
+		},
+	}
+}
+
+func printCredential(file *awsdefault.CredentialsFile) *cli.Command {
+	return &cli.Command{
+		Name:    "export",
+		Aliases: []string{"envs"},
+		Usage:   "Returns the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY of the currently used profile in form of export commands.",
+		Action: func(c *cli.Context) error {
+			id, err := file.GetUsedID()
+			if err != nil {
+				return err
+			}
+			k, err := file.GetUsedKey()
+			if err != nil {
+				return err
+			}
+			fmt.Printf("export AWS_ACCESS_KEY_ID=%s\nexport AWS_SECRET_ACCESS_KEY=%s\n", id, k)
 			return nil
 		},
 	}
@@ -85,6 +131,9 @@ func main() {
 		*setDefaultProfile(file),
 		*unsetDefaultProfile(file),
 		*getUsedProfile(file),
+		*getUsedID(file),
+		*getUsedKey(file),
+		*printCredential(file),
 		*getProfiles(file),
 	}
 	err = app.Run(os.Args)
