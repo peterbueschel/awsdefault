@@ -46,6 +46,61 @@ command:
 $ awsdefault rm
 ```
 
+## Show the AWS_ACCESS_KEY_ID of currently used profile
+
+command:
+
+```bash
+$ awsdefault id
+```
+
+- example output:
+
+```bash
+AAAAAAABBBBIIIIII
+```
+
+- tip: use it in parameters or bash scripts
+
+```bash
+AWS_ACCESS_KEY_ID=$(awsdefault id)
+```
+
+## Show the AWS_SECRET_ACCESS_KEY of currently used profile
+
+command:
+
+```bash
+$ awsdefault key
+```
+
+- example output:
+
+```bash
+aaaaeenntrnggg/trntruaelvii
+```
+
+## Print the export command for AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY of currently used profile
+
+command:
+
+```bash
+$ awsdefault export
+```
+
+- example output:
+
+```bash
+export AWS_ACCESS_KEY_ID=AAAAAAABBBBIIIIII
+export AWS_SECRET_ACCESS_KEY=aaaaeenntrnggg/trntruaelvii
+```
+
+- tip: add an alias to your .bashrc or .zshrc like
+
+```bash
+alias awsexport='eval $(awsdefault export)'
+```
+
 # Installation
 
 ## Option 1 — Download binaries

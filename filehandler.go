@@ -30,18 +30,23 @@ const (
 )
 
 type (
-	// Profile stored in the AWS shared credentials file
+	// Profile stored in the AWS shared credentials file consisting of an
+	// AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
 	Profile struct {
+		Name            string
 		AccessKeyID     string `ini:"aws_access_key_id"`
 		SecretAccessKey string `ini:"aws_secret_access_key"`
 	}
 
+	// CredentialsFile stores the content and path of the AWS credentials file
 	CredentialsFile struct {
 		Content *ini.File
 		Path    string
 	}
 )
 
+// GetCredentialsFile reads the AWS credentials file either from the HOME directory or
+// from a path given by the environment variable AWS_SHARED_CREDENTIALS_FILE
 func GetCredentialsFile() (*CredentialsFile, error) {
 	home := func() string {
 		if runtime.GOOS == "windows" {
@@ -58,6 +63,7 @@ func GetCredentialsFile() (*CredentialsFile, error) {
 	return &CredentialsFile{f, path}, err
 }
 
+// GetProfilesNames returns a sorted list of all available profiles inside the AWS credentials file.
 func (f *CredentialsFile) GetProfilesNames() (names []string) {
 	if f.Content != nil {
 		for _, p := range f.Content.SectionStrings() {
@@ -70,20 +76,15 @@ func (f *CredentialsFile) GetProfilesNames() (names []string) {
 	return
 }
 
+// GetUsedProfileNameAndIndex returns the name and the index of the profile currently used as default
+// profile.
 func (f *CredentialsFile) GetUsedProfileNameAndIndex() (string, int, error) {
-	d, err := f.GetProfile("default")
+	d, err := f.GetProfileBy("default")
 	if err != nil {
 		return "", -1, err
 	}
-	if len(d.AccessKeyID) == 0 || len(d.SecretAccessKey) == 0 {
-		return "", -1,
-			fmt.Errorf(
-				"%s contains no valid default profile or no default profile was set",
-				f.Path,
-			)
-	}
 	for i, n := range f.GetProfilesNames() {
-		p, err := f.GetProfile(n)
+		p, err := f.GetProfileBy(n)
 		if err != nil {
 			return "", -1, err
 		}
@@ -100,29 +101,50 @@ func (f *CredentialsFile) GetUsedProfileNameAndIndex() (string, int, error) {
 
 }
 
-func (f *CredentialsFile) GetProfile(name string) (*Profile, error) {
-	p := new(Profile)
+// GetUsedID returns the AWS_ACCESS_KEY_ID of the profile currently used as default profile.
+func (f *CredentialsFile) GetUsedID() (string, error) {
+	d, err := f.GetProfileBy("default")
+	return d.AccessKeyID, err
+}
+
+// GetUsedKey returns the AWS_SECRET_ACCESS_KEY of the profile currently used as default profile.
+func (f *CredentialsFile) GetUsedKey() (string, error) {
+	d, err := f.GetProfileBy("default")
+	return d.SecretAccessKey, err
+}
+
+// GetProfileBy returns the profile by a given name and verifies also if the
+// AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are existing for this profile
+func (f *CredentialsFile) GetProfileBy(name string) (*Profile, error) {
+	p := &Profile{Name: name}
 	s, err := f.Content.GetSection(name)
 	if err != nil {
-		return nil, err
+		return p, err
 	}
-	err = s.MapTo(p)
+	_ = s.MapTo(p) // error cannot happen; p is always a pointer
+	if len(p.AccessKeyID) == 0 || len(p.SecretAccessKey) == 0 {
+		return p,
+			fmt.Errorf(
+				"found no aws_access_key_id or aws_secret_access_key for the profile '%s'",
+				p.Name,
+			)
+	}
 	return p, err
 }
 
+// SetDefaultTo overwrites/creates the default section inside the AWS credentials file.
+// It also adds a comment containing the name of the profile used as current default profile
 func (f *CredentialsFile) SetDefaultTo(profileName string) error {
-	p, err := f.GetProfile(profileName)
+	p, err := f.GetProfileBy(profileName)
 	if err != nil {
 		return err
 	}
 	f.Content.Section("default").Comment = commentPrefix + profileName
-	err = f.Content.Section("default").ReflectFrom(p)
-	if err != nil {
-		return err
-	}
+	_ = f.Content.Section("default").ReflectFrom(p) // error cannot happen; p is always a pointer
 	return f.Content.SaveTo(f.Path)
 }
 
+// UnSetDefault deletes the default section inside the AWS credentials file.
 func (f *CredentialsFile) UnSetDefault() error {
 	f.Content.DeleteSection("default")
 	return f.Content.SaveTo(f.Path)

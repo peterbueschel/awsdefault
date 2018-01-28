@@ -40,7 +40,7 @@ func TestMain(m *testing.M) {
 func TestCredentialsFile_SetDefaultTo(t *testing.T) {
 	content, err := ini.Load(testFileContent)
 	if err != nil {
-		t.Errorf("CredentialsFile.SetDefaultTo() error = %v", err)
+		t.Fatalf("CredentialsFile.SetDefaultTo() error = %v", err)
 	}
 	type fields struct {
 		Content *ini.File
@@ -50,11 +50,10 @@ func TestCredentialsFile_SetDefaultTo(t *testing.T) {
 		profileName string
 	}
 	tests := []struct {
-		name        string
-		fields      fields
-		args        args
-		wantComment string
-		wantErr     bool
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
 	}{
 		{
 			name: "0positiv - add default section and set values to live values",
@@ -65,8 +64,7 @@ func TestCredentialsFile_SetDefaultTo(t *testing.T) {
 			args: args{
 				profileName: "live",
 			},
-			wantComment: "; active_profile=live",
-			wantErr:     false,
+			wantErr: false,
 		},
 		{
 			name: "1positiv - add default section and set values to dev values",
@@ -77,8 +75,7 @@ func TestCredentialsFile_SetDefaultTo(t *testing.T) {
 			args: args{
 				profileName: "dev",
 			},
-			wantComment: "; active_profile=dev",
-			wantErr:     false,
+			wantErr: false,
 		},
 		{
 			name: "2negativ - given section not existing, but last active_profile is used",
@@ -89,8 +86,7 @@ func TestCredentialsFile_SetDefaultTo(t *testing.T) {
 			args: args{
 				profileName: "xxxxxxx",
 			},
-			wantComment: "; active_profile=dev",
-			wantErr:     true,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -102,12 +98,6 @@ func TestCredentialsFile_SetDefaultTo(t *testing.T) {
 			if err := f.SetDefaultTo(tt.args.profileName); (err != nil) != tt.wantErr {
 				t.Errorf("CredentialsFile.SetDefaultTo() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			}
-			if got := f.Content.Section("default").Comment; got != tt.wantComment {
-				t.Errorf(
-					"CredentialsFile.SetDefaultTo() got comment = %v, want comment %v",
-					got, tt.wantComment,
-				)
 			}
 		})
 	}
@@ -326,7 +316,7 @@ func TestCredentialsFile_GetUsedProfileNameAndIndex(t *testing.T) {
 func TestCredentialsFile_UnSetDefault(t *testing.T) {
 	unsetTestFilePath := "testdata/unsetTests"
 	rmFile := func() {
-		os.Remove(unsetTestFilePath)
+		_ = os.Remove(unsetTestFilePath)
 	}
 	good := []byte(`
 	; comment
@@ -400,6 +390,162 @@ aws_secret_access_key = D
 					string(b), string(tt.want))
 			}
 			rmFile()
+		})
+	}
+}
+
+func TestCredentialsFile_GetUsedID(t *testing.T) {
+	ini.DefaultHeader = true
+	good := []byte(`
+	[default]
+	aws_access_key_id=A
+	aws_secret_access_key=B
+	`)
+	noDefault := []byte(`
+	[dev]
+	aws_access_key_id=A
+	aws_secret_access_key=B
+	`)
+	noAWS := []byte(`
+	[default]
+	foo=bar
+	[dev]
+	foo=bar
+	`)
+	type fields struct {
+		Content []byte
+		Path    string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "positiv — BAT",
+			fields: fields{
+				Content: good,
+				Path:    testFilePath,
+			},
+			want:    "A",
+			wantErr: false,
+		},
+		{
+			name: "negativ — no default",
+			fields: fields{
+				Content: noDefault,
+				Path:    testFilePath,
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "negativ — no valid key id",
+			fields: fields{
+				Content: noAWS,
+				Path:    testFilePath,
+			},
+			want:    "",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			content, err := ini.InsensitiveLoad(tt.fields.Content)
+			if err != nil {
+				t.Errorf("CredentialsFile.UnSetDefault() error = %v", err)
+			}
+			f := &CredentialsFile{
+				Content: content,
+				Path:    tt.fields.Path,
+			}
+			got, err := f.GetUsedID()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CredentialsFile.GetUsedID() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("CredentialsFile.GetUsedID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCredentialsFile_GetUsedKey(t *testing.T) {
+	ini.DefaultHeader = true
+	good := []byte(`
+	[default]
+	aws_access_key_id=A
+	aws_secret_access_key=B
+	`)
+	noDefault := []byte(`
+	[dev]
+	aws_access_key_id=A
+	aws_secret_access_key=B
+	`)
+	noAWS := []byte(`
+	[default]
+	foo=bar
+	[dev]
+	foo=bar
+	`)
+	type fields struct {
+		Content []byte
+		Path    string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "positiv — BAT",
+			fields: fields{
+				Content: good,
+				Path:    testFilePath,
+			},
+			want:    "B",
+			wantErr: false,
+		},
+		{
+			name: "negativ — no default",
+			fields: fields{
+				Content: noDefault,
+				Path:    testFilePath,
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "negativ — no valid key id",
+			fields: fields{
+				Content: noAWS,
+				Path:    testFilePath,
+			},
+			want:    "",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			content, err := ini.InsensitiveLoad(tt.fields.Content)
+			if err != nil {
+				t.Errorf("CredentialsFile.UnSetDefault() error = %v", err)
+			}
+			f := &CredentialsFile{
+				Content: content,
+				Path:    tt.fields.Path,
+			}
+			got, err := f.GetUsedKey()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CredentialsFile.GetUsedID() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("CredentialsFile.GetUsedID() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }
