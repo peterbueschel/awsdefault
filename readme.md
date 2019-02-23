@@ -1,6 +1,7 @@
 awsdefault
 ==========
 [![Build Status](https://travis-ci.org/peterbueschel/awsdefault.svg?branch=master)](https://travis-ci.org/peterbueschel/awsdefault)
+[![Go Report Card](https://goreportcard.com/badge/github.com/peterbueschel/awsdefault)](https://goreportcard.com/report/github.com/peterbueschel/awsdefault)
 [![Coverage Status](https://coveralls.io/repos/github/peterbueschel/awsdefault/badge.svg?branch=master)](https://coveralls.io/github/peterbueschel/awsdefault?branch=master)
 
 *Change [Amazon AWS](https://aws.amazon.com) profiles/accounts globally.*
