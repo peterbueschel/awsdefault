@@ -36,6 +36,7 @@ type (
 		Name            string `ini:"name"`
 		AccessKeyID     string `ini:"aws_access_key_id"`
 		SecretAccessKey string `ini:"aws_secret_access_key"`
+		SessionToken    string `ini:"aws_session_token"`
 	}
 
 	// CredentialsFile stores the content and path of the AWS credentials file
@@ -81,7 +82,7 @@ func (f *CredentialsFile) GetProfilesNames() (names []string) {
 func (f *CredentialsFile) GetUsedProfileNameAndIndex() (string, int, error) {
 	d, err := f.GetProfileBy("default")
 	if err != nil {
-		return "", -1, err
+		return "no default", -2, err
 	}
 	if len(d.AccessKeyID) == 0 || len(d.SecretAccessKey) == 0 {
 		return "no default set", -2, nil

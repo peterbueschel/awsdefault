@@ -30,8 +30,12 @@ func getUsedProfile(file *awsdefault.CredentialsFile) *cli.Command {
 		Aliases: []string{"show", "is", "now", "curr"},
 		Usage:   "Returns the current AWS default profile.",
 		Action: func(c *cli.Context) error {
-			n, _, err := file.GetUsedProfileNameAndIndex()
+			n, idx, err := file.GetUsedProfileNameAndIndex()
 			if err != nil {
+				if idx == -2 {
+					fmt.Println(n)
+					return nil
+				}
 				return err
 			}
 			fmt.Println(n)
@@ -122,7 +126,7 @@ func printCredential(file *awsdefault.CredentialsFile) *cli.Command {
 func main() {
 	file, err := awsdefault.GetCredentialsFile()
 	if err != nil {
-		log.Fatalf("[AWSFLIPPER][ERROR] %v.\n", err)
+		log.Fatalf("[AWSDEFAULT][ERROR] %v.\n", err)
 	}
 
 	app := cli.NewApp()
@@ -138,6 +142,6 @@ func main() {
 	}
 	err = app.Run(os.Args)
 	if err != nil {
-		log.Fatalf("[AWSFLIPPER][ERROR] %s.\n", err)
+		log.Fatalf("[AWSDEFAULT][ERROR] %s.\n", err)
 	}
 }
