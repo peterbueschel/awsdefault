@@ -33,7 +33,7 @@ type (
 	// Profile stored in the AWS shared credentials file consisting of an
 	// AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
 	Profile struct {
-		Name            string
+		Name            string `ini:"name"`
 		AccessKeyID     string `ini:"aws_access_key_id"`
 		SecretAccessKey string `ini:"aws_secret_access_key"`
 		SessionToken    string `ini:"aws_session_token"`
@@ -84,20 +84,18 @@ func (f *CredentialsFile) GetUsedProfileNameAndIndex() (string, int, error) {
 	if err != nil {
 		return "no default", -2, err
 	}
+	if len(d.AccessKeyID) == 0 || len(d.SecretAccessKey) == 0 {
+		return "no default set", -2, nil
+	}
 	for i, n := range f.GetProfilesNames() {
-		p, err := f.GetProfileBy(n)
-		if err != nil {
-			return "", -1, err
-		}
-		if p.AccessKeyID == d.AccessKeyID && p.SecretAccessKey == d.SecretAccessKey {
+		if n == d.Name {
 			return n, i, nil
 		}
 	}
 	return "", -1,
 		fmt.Errorf(
-			"No profile in %s matches the current default-profile. "+
-				"The AWS keys in the default profile are different to all "+
-				"other keys in the other profiles.", f.Path,
+			"No profile in %s matches the current configured default-profile '%s'.",
+			f.Path, d.Name,
 		)
 
 }
@@ -114,8 +112,7 @@ func (f *CredentialsFile) GetUsedKey() (string, error) {
 	return d.SecretAccessKey, err
 }
 
-// GetProfileBy returns the profile by a given name and verifies also if the
-// AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are existing for this profile
+// GetProfileBy returns the profile by a given name
 func (f *CredentialsFile) GetProfileBy(name string) (*Profile, error) {
 	p := &Profile{Name: name}
 	s, err := f.Content.GetSection(name)
@@ -123,14 +120,7 @@ func (f *CredentialsFile) GetProfileBy(name string) (*Profile, error) {
 		return p, err
 	}
 	_ = s.MapTo(p) // error cannot happen; p is always a pointer
-	if len(p.AccessKeyID) == 0 || len(p.SecretAccessKey) == 0 {
-		return p,
-			fmt.Errorf(
-				"found no aws_access_key_id or aws_secret_access_key for the profile '%s'",
-				p.Name,
-			)
-	}
-	return p, err
+	return p, nil
 }
 
 // SetDefaultTo overwrites/creates the default section inside the AWS credentials file.
@@ -140,7 +130,6 @@ func (f *CredentialsFile) SetDefaultTo(profileName string) error {
 	if err != nil {
 		return err
 	}
-	//f.Content.Section("default").Comment = commentPrefix + profileName
 	_ = f.Content.Section("default").ReflectFrom(p) // error cannot happen; p is always a pointer
 	return f.Content.SaveTo(f.Path)
 }
