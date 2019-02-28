@@ -33,10 +33,13 @@ type (
 	// Profile stored in the AWS shared credentials file consisting of an
 	// AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
 	Profile struct {
-		Name            string `ini:"name"`
+		//Name            string `ini:"name"`
 		AccessKeyID     string `ini:"aws_access_key_id"`
 		SecretAccessKey string `ini:"aws_secret_access_key"`
-		SessionToken    string `ini:"aws_session_token"`
+		SessionToken    string `ini:"aws_session_token,omitempty"`
+		Region          string `ini:"region,omitempty"`
+		Output          string `ini:"output,omitempty"`
+		keys            map[string]string
 	}
 
 	// CredentialsFile stores the content and path of the AWS credentials file
@@ -77,49 +80,69 @@ func (f *CredentialsFile) GetProfilesNames() (names []string) {
 	return
 }
 
+// sectionsEqual is helper function to check if two ini sections are equal in one direction
+func profilesEqual(s, d *Profile) bool {
+	if len(s.keys) != len(d.keys) {
+		return false
+	}
+	for k, v := range s.keys {
+		if d.keys[k] != v {
+			return false
+		}
+	}
+	return true
+}
+
 // GetUsedProfileNameAndIndex returns the name and the index of the profile currently used as default
 // profile.
 func (f *CredentialsFile) GetUsedProfileNameAndIndex() (string, int, error) {
-	d, err := f.GetProfileBy("default")
-	if err != nil {
-		return "no default", -2, err
+	d, _ := f.GetProfileBy("default") // default always exists
+	if len(d.keys) < 1 {
+		return "no default", -2, nil
 	}
-	if len(d.AccessKeyID) == 0 || len(d.SecretAccessKey) == 0 {
-		return "no default set", -2, nil
-	}
-	for i, n := range f.GetProfilesNames() {
-		if n == d.Name {
-			return n, i, nil
+	for idx, n := range f.GetProfilesNames() {
+		if s, err := f.GetProfileBy(n); err == nil {
+			if profilesEqual(s, d) {
+				return n, idx, nil
+			}
 		}
 	}
 	return "", -1,
 		fmt.Errorf(
-			"No profile in %s matches the current configured default-profile '%s'.",
-			f.Path, d.Name,
+			"no profile in %s matches the current configured default-profile or AWS keys expired",
+			f.Path,
 		)
-
 }
 
 // GetUsedID returns the AWS_ACCESS_KEY_ID of the profile currently used as default profile.
 func (f *CredentialsFile) GetUsedID() (string, error) {
-	d, err := f.GetProfileBy("default")
-	return d.AccessKeyID, err
+	d, _ := f.GetProfileBy("default")
+	if len(d.AccessKeyID) == 0 { // empty default section
+		return "", fmt.Errorf("AWS_ACCESS_KEY_ID is not set inside the default section")
+	}
+	return d.AccessKeyID, nil
 }
 
 // GetUsedKey returns the AWS_SECRET_ACCESS_KEY of the profile currently used as default profile.
 func (f *CredentialsFile) GetUsedKey() (string, error) {
-	d, err := f.GetProfileBy("default")
-	return d.SecretAccessKey, err
+	d, _ := f.GetProfileBy("default")
+	if len(d.SecretAccessKey) == 0 { // empty default section
+		return "", fmt.Errorf("AWS_SECRET_ACCESS_KEY is not set inside the default section")
+	}
+	return d.SecretAccessKey, nil
 }
 
 // GetProfileBy returns the profile by a given name
 func (f *CredentialsFile) GetProfileBy(name string) (*Profile, error) {
-	p := &Profile{Name: name}
+	p := &Profile{keys: make(map[string]string)}
 	s, err := f.Content.GetSection(name)
 	if err != nil {
 		return p, err
 	}
 	_ = s.MapTo(p) // error cannot happen; p is always a pointer
+	for _, k := range s.Keys() {
+		p.keys[k.Name()] = k.Value()
+	}
 	return p, nil
 }
 
