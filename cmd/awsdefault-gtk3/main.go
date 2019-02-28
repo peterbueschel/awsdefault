@@ -196,7 +196,8 @@ func fetchProfiles() (p *profiles, err error) {
 		return
 	}
 	p.list = append(p.file.GetProfilesNames(), noProfile)
-	if p.curr, p.currIdx, err = p.file.GetUsedProfileNameAndIndex(); err != nil {
+	p.curr, p.currIdx, err = p.file.GetUsedProfileNameAndIndex()
+	if err != nil || p.currIdx == -2 { // -2 means no default set
 		p.curr = noProfile
 		p.currIdx = len(p.list) - 1 // last item is noProfile
 	}

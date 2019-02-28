@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCredentialsFile_SetDefaultTo(t *testing.T) {
-	content, err := ini.Load(testFileContent)
+	content, err := ini.InsensitiveLoad(testFileContent)
 	if err != nil {
 		t.Fatalf("CredentialsFile.SetDefaultTo() error = %v", err)
 	}
@@ -233,12 +233,6 @@ func TestCredentialsFile_GetUsedProfileNameAndIndex(t *testing.T) {
 	aws_access_key_id=C
 	aws_secret_access_key=D
 	`)
-	noAWS := []byte(`
-	[default]
-	foo=bar
-	[dev]
-	foo=bar
-	`)
 	type fields struct {
 		Content []byte
 		Path    string
@@ -271,29 +265,19 @@ func TestCredentialsFile_GetUsedProfileNameAndIndex(t *testing.T) {
 			wantErr:   true,
 		},
 		{
-			name: "2negativ - default profile does not exit",
+			name: "2positiv - no default set",
 			fields: fields{
 				Content: noDefault,
 				Path:    testFilePath,
 			},
-			want:      "",
-			wantIndex: -1,
-			wantErr:   true,
-		},
-		{
-			name: "3negativ - no aws keys",
-			fields: fields{
-				Content: noAWS,
-				Path:    testFilePath,
-			},
-			want:      "",
-			wantIndex: -1,
-			wantErr:   true,
+			want:      "no default",
+			wantIndex: -2,
+			wantErr:   false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			content, _ := ini.Load(tt.fields.Content)
+			content, _ := ini.InsensitiveLoad(tt.fields.Content)
 			f := &CredentialsFile{
 				Content: content,
 				Path:    tt.fields.Path,
@@ -510,7 +494,7 @@ func TestCredentialsFile_GetUsedKey(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "negativ — no default",
+			name: "negativ — empty default",
 			fields: fields{
 				Content: noDefault,
 				Path:    testFilePath,
